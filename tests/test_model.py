@@ -16,27 +16,21 @@ import pandas as pd
 import joblib
 from pathlib import Path
 
+
 def test_model_quality_gate():
+    # load model (this is a Pipeline)
     model_path = Path("model/final_model.joblib")
     model = joblib.load(model_path)
 
+    # load raw data - NO feature engineering here
     df = pd.read_csv("data/day_2012.csv")
 
-    # target
     y = df["cnt"]
-
-    # features
     X = df.drop(columns=["cnt"])
 
-    # FIX: recreate engineered features exactly like training
-    if "dteday" in X.columns:
-        X["dteday"] = pd.to_datetime(X["dteday"])
-        X["dayofweek"] = X["dteday"].dt.dayofweek
-        X = X.drop(columns=["dteday"])
-
-    # prediction
+    # predict - pipeline handles everything
     preds = model.predict(X)
 
-    # simple quality gate
+    # basic quality checks
     assert len(preds) == len(y)
     assert preds.mean() > 0
