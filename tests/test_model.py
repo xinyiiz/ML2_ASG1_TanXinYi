@@ -30,23 +30,18 @@ def ensure_dayofweek(df: pd.DataFrame) -> pd.DataFrame:
 
 def test_model_quality_gate():
     model_path = Path("model/final_model.joblib")
-    assert model_path.exists(), f"Missing model file: {model_path}"
     model = joblib.load(model_path)
 
     df = pd.read_csv("data/day_2012.csv")
-    assert "cnt" in df.columns, "Target column 'cnt' missing"
 
     y = df["cnt"]
     X = df.drop(columns=["cnt"])
 
-    # ✅ force-create dayofweek
+    # create dayofweek
     X = ensure_dayofweek(X)
 
-    # ✅ PROVE it exists (if CI is running this file, this assert will run)
-    assert "dayofweek" in X.columns, f"Still missing dayofweek, cols={list(X.columns)}"
-
-    # small debug that will show in CI on failure
-    print("DEBUG columns:", list(X.columns)[:25])
+    # PROOF this file is running in CI
+    assert "dayofweek" in X.columns, f"dayofweek still missing. cols={list(X.columns)}"
 
     preds = model.predict(X)
 
