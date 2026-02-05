@@ -87,6 +87,8 @@ def main():
 
     y = df[TARGET]
     X = df.drop(columns=[TARGET])
+    X = DayOfWeekAdder().transform(X)
+
 
     # 🔑 CRITICAL FIX: add dayofweek BEFORE fitting
     X = DayOfWeekAdder().transform(X)
