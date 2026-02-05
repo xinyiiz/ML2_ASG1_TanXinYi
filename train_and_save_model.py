@@ -1,8 +1,6 @@
-import os
-from pathlib import Path
-
 import joblib
 import pandas as pd
+from pathlib import Path
 
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.compose import ColumnTransformer
@@ -16,18 +14,6 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 # 1) Custom transformer
 # -----------------------------
 class DayOfWeekAdder(BaseEstimator, TransformerMixin):
-    """
-    Makes sure 'dayofweek' exists for the model.
-
-    Input can contain:
-    - dayofweek already
-    - or dteday (dd/mm/YYYY)
-    - or weekday (0-6)
-
-    Output:
-    - always has dayofweek
-    - drops dteday (so the rest of the pipeline won't choke on a raw date string)
-    """
     def fit(self, X, y=None):
         return self
 
@@ -35,7 +21,6 @@ class DayOfWeekAdder(BaseEstimator, TransformerMixin):
         X = X.copy()
 
         if "dayofweek" in X.columns:
-            # If dteday exists too, drop it to keep features consistent
             if "dteday" in X.columns:
                 X = X.drop(columns=["dteday"])
             return X
@@ -50,11 +35,11 @@ class DayOfWeekAdder(BaseEstimator, TransformerMixin):
             X["dayofweek"] = X["weekday"]
             return X
 
-        raise ValueError("Cannot create 'dayofweek' - missing both 'dteday' and 'weekday'.")
+        raise ValueError("Cannot create 'dayofweek'")
 
 
 # -----------------------------
-# 2) Feature lists (matches your notebook intent)
+# 2) Feature lists
 # -----------------------------
 CAT_FEATURES = ["season", "mnth", "weekday", "weathersit"]
 NUM_FEATURES = ["holiday", "workingday", "temp", "atemp", "hum", "windspeed", "dayofweek"]
@@ -88,36 +73,33 @@ def build_pipeline():
         n_jobs=-1
     )
 
-    pipe = Pipeline([
-        ("add_dayofweek", DayOfWeekAdder()),
+    return Pipeline([
         ("preprocess", preprocessor),
         ("model", model),
     ])
-
-    return pipe
 
 
 # -----------------------------
 # 4) Train and save
 # -----------------------------
 def main():
-    data_path = Path("data/day_2012.csv")  # train on 2012 like your test uses
-    df = pd.read_csv(data_path)
+    df = pd.read_csv("data/day_2012.csv")
 
     y = df[TARGET]
     X = df.drop(columns=[TARGET])
+
+    # 🔑 CRITICAL FIX: add dayofweek BEFORE fitting
+    X = DayOfWeekAdder().transform(X)
 
     pipe = build_pipeline()
     pipe.fit(X, y)
 
     out_dir = Path("model")
-    out_dir.mkdir(parents=True, exist_ok=True)
+    out_dir.mkdir(exist_ok=True)
 
-    out_path = out_dir / "final_model.joblib"
-    joblib.dump(pipe, out_path)
-
-    print("Saved model to:", out_path.resolve())
-    print("Columns in training X:", list(X.columns))
+    joblib.dump(pipe, out_dir / "final_model.joblib")
+    print("Model saved successfully with dayofweek in feature_names_in_")
+    print("Training columns:", list(X.columns))
 
 
 if __name__ == "__main__":
