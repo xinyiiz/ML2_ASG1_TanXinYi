@@ -22,7 +22,6 @@ def add_dayofweek(df: pd.DataFrame) -> pd.DataFrame:
     if DATE_COL in df.columns:
         df[DATE_COL] = pd.to_datetime(df[DATE_COL], format="%d/%m/%Y", errors="coerce")
         df["dayofweek"] = df[DATE_COL].dt.dayofweek
-        df = df.drop(columns=[DATE_COL])
         return df
 
     # 3) fallback - many datasets have weekday already
