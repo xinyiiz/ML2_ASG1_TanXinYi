@@ -5,33 +5,33 @@ import pandas as pd
 from sklearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestRegressor
 
-from src.preprocess import add_dayofweek
-from src.pipeline import build_preprocessor
+from src.pipeline import build_pipeline
 from src.features import TARGET, all_features
+
 
 def build_model() -> Pipeline:
     """
     End-to-end sklearn pipeline:
-    preprocessing + RandomForestRegressor
+    DateFeatureAdder -> preprocessing -> RandomForestRegressor
     """
-    preprocessor = build_preprocessor()
     model = RandomForestRegressor(
         n_estimators=200,
         random_state=42,
-        n_jobs=-1
+        n_jobs=-1,
     )
+    return build_pipeline(model)
 
-    return Pipeline([
-        ("preprocess", preprocessor),
-        ("model", model),
-    ])
 
 def make_X_y(df: pd.DataFrame):
     """
     For training/evaluation.
-    Ensures dayofweek exists before selecting features.
+
+    IMPORTANT:
+    - Do NOT create engineered date columns here.
+    - all_features() should return RAW input features that exist in the CSV,
+      including 'dteday' (so DateFeatureAdder can derive dayofyear/weekofyear).
     """
-    df = add_dayofweek(df)
+    df = df.copy()
 
     if TARGET not in df.columns:
         raise ValueError(f"Missing target column: {TARGET}")
@@ -45,13 +45,19 @@ def make_X_y(df: pd.DataFrame):
     y = df[TARGET].copy()
     return X, y
 
+
 def make_X(df: pd.DataFrame):
     """
     For inference.
-    Creates dayofweek and returns feature-only dataframe.
-    Drops target if present.
+
+    Returns RAW input features only.
+    Date features will be created inside the pipeline by DateFeatureAdder.
     """
-    df = add_dayofweek(df)
+    df = df.copy()
+
+    # If target exists in inference input, ignore it safely
+    if TARGET in df.columns:
+        df = df.drop(columns=[TARGET])
 
     feats = all_features()
     missing = [c for c in feats if c not in df.columns]
@@ -61,6 +67,7 @@ def make_X(df: pd.DataFrame):
     X = df[feats].copy()
     return X
 
+
 def train(df: pd.DataFrame) -> Pipeline:
     """
     Convenience wrapper if your tests expect a train() function.
@@ -69,6 +76,7 @@ def train(df: pd.DataFrame) -> Pipeline:
     pipe = build_model()
     pipe.fit(X, y)
     return pipe
+
 
 def predict(pipe: Pipeline, df: pd.DataFrame):
     """
