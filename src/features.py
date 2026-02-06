@@ -1,7 +1,10 @@
-# src/features.py
+# =========================
+# File: src/features.py
+# =========================
 
 CATEGORICAL_FEATURES = ["season", "mnth", "weekday", "weathersit"]
 
+# Raw numeric columns that already exist in the CSV
 BASE_NUMERIC_FEATURES = [
     "holiday",
     "workingday",
@@ -11,9 +14,10 @@ BASE_NUMERIC_FEATURES = [
     "windspeed",
 ]
 
+# Derived numeric columns created from dteday inside DateFeatureAdder
 DERIVED_DATE_FEATURES = ["dayofweek", "dayofyear", "weekofyear"]
 
-# What the ColumnTransformer should see AFTER DateFeatureAdder runs
+# What the preprocessor should select AFTER DateFeatureAdder runs
 NUMERIC_FEATURES = BASE_NUMERIC_FEATURES + DERIVED_DATE_FEATURES
 
 TARGET = "cnt"
@@ -21,7 +25,7 @@ DATE_COL = "dteday"
 
 def all_features():
     """
-    Use this for selecting columns from the RAW dataframe before the pipeline.
+    Features to select from the RAW dataframe BEFORE the pipeline runs.
     Must include dteday so DateFeatureAdder can create derived date features.
     Must NOT include derived date features (they don't exist yet).
     """
