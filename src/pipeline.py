@@ -7,6 +7,8 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.impute import SimpleImputer
 
 from src.features import CATEGORICAL_FEATURES, NUMERIC_FEATURES
+from src.transformers import DateFeatureAdder
+
 
 def build_preprocessor() -> ColumnTransformer:
     """
@@ -31,3 +33,19 @@ def build_preprocessor() -> ColumnTransformer:
             ("num", num_pipe, NUMERIC_FEATURES),
         ]
     )
+
+
+def build_pipeline(model) -> Pipeline:
+    """
+    Full end-to-end pipeline:
+    1) Create dayofweek/dayofyear/weekofyear from dteday (and drop dteday)
+    2) Preprocess columns (OHE + scaling + imputation)
+    3) Train/predict with model
+    """
+    preprocessor = build_preprocessor()
+
+    return Pipeline([
+        ("date_features", DateFeatureAdder()),
+        ("preprocessor", preprocessor),
+        ("model", model),
+    ])
