@@ -1,5 +1,15 @@
 CATEGORICAL_FEATURES = ["season", "mnth", "weekday", "weathersit"]
-NUMERIC_FEATURES = ["holiday", "workingday", "temp", "atemp", "hum", "windspeed", "dayofweek"]
+
+NUMERIC_FEATURES = [
+    "holiday",
+    "workingday",
+    "temp",
+    "atemp",
+    "hum",
+    "windspeed",
+    "dayofyear",
+    "weekofyear",
+]
 
 TARGET = "cnt"
 
