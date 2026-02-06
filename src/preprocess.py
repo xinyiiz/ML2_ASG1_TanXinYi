@@ -1,32 +1,36 @@
-# src/preprocess.py
+# =========================
+# File: src/preprocess.py
+# =========================
 import pandas as pd
 
 DATE_COL = "dteday"
 
-def add_dayofweek(df: pd.DataFrame) -> pd.DataFrame:
+def add_date_features(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Ensures df has 'dayofweek' no matter what the input looks like.
-
-    Priority:
-    1) If dayofweek already exists, keep it
-    2) Else if dteday exists, parse + derive dayofweek
-    3) Else if weekday exists, copy it into dayofweek
+    Ensures df has dayofweek, dayofyear, weekofyear.
+    Does NOT drop dteday (safe for other code paths).
     """
     df = df.copy()
 
-    # 1) already present
-    if "dayofweek" in df.columns:
-        return df
-
-    # 2) derive from date if possible
+    # If we have dteday, derive from it
     if DATE_COL in df.columns:
-        df[DATE_COL] = pd.to_datetime(df[DATE_COL], format="%d/%m/%Y", errors="coerce")
-        df["dayofweek"] = df[DATE_COL].dt.dayofweek
+        d = pd.to_datetime(df[DATE_COL], errors="coerce")
+        df["dayofweek"] = d.dt.dayofweek
+        df["dayofyear"] = d.dt.dayofyear
+        df["weekofyear"] = d.dt.isocalendar().week.astype("int64")
         return df
 
-    # 3) fallback - many datasets have weekday already
-    if "weekday" in df.columns:
-        df["dayofweek"] = df["weekday"]
-        return df
+    # Fallbacks if date is missing
+    if "dayofweek" not in df.columns:
+        if "weekday" in df.columns:
+            df["dayofweek"] = df["weekday"]
+        else:
+            df["dayofweek"] = 0
 
-    raise ValueError("Cannot create 'dayofweek' - missing both 'dteday' and 'weekday'.")
+    if "dayofyear" not in df.columns:
+        df["dayofyear"] = 0
+
+    if "weekofyear" not in df.columns:
+        df["weekofyear"] = 0
+
+    return df
