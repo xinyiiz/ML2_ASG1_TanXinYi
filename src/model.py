@@ -7,6 +7,7 @@ from sklearn.ensemble import RandomForestRegressor
 
 from src.pipeline import build_pipeline
 from src.features import TARGET, all_features
+from src.preprocess import add_date_features
 
 
 def build_model() -> Pipeline:
@@ -19,7 +20,7 @@ def build_model() -> Pipeline:
 
 
 def make_X_y(df: pd.DataFrame):
-    df = df.copy()
+    df = add_date_features(df)
 
     if TARGET not in df.columns:
         raise ValueError(f"Missing target column: {TARGET}")
@@ -31,7 +32,7 @@ def make_X_y(df: pd.DataFrame):
 
 
 def make_X(df: pd.DataFrame):
-    df = df.copy()
+    df = add_date_features(df)
     if TARGET in df.columns:
         df = df.drop(columns=[TARGET])
 
