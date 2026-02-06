@@ -42,12 +42,14 @@ def make_X(df: pd.DataFrame):
 
 
 def train(df: pd.DataFrame) -> Pipeline:
-    X, y = make_X_y(df)
+    df = add_date_features(df)
+    y = df[TARGET].copy()
+    X = df.drop(columns=[TARGET]).copy()
     pipe = build_model()
     pipe.fit(X, y)
     return pipe
 
 
 def predict(pipe: Pipeline, df: pd.DataFrame):
-    X = make_X(df)
-    return pipe.predict(X)
+    df = add_date_features(df)
+    return pipe.predict(df)
