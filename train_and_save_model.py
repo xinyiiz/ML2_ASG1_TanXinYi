@@ -9,12 +9,10 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.impute import SimpleImputer
 from sklearn.ensemble import RandomForestRegressor
 
-# ✅ FIX: class name is DateFeatureAdder (no "s")
 from src.transformers import DateFeatureAdder
 
 
 def build_pipeline():
-    # After DateFeatureAdder runs, dteday is dropped and these exist:
     numeric_features = [
         "holiday",
         "workingday",
@@ -56,16 +54,22 @@ def build_pipeline():
         remainder="drop",
     )
 
+    # ✅ ensure ColumnTransformer returns pandas (keeps feature names)
+    preprocessor.set_output(transform="pandas")
+
     model = RandomForestRegressor(
         n_estimators=200,
         random_state=42,
         n_jobs=-1,
     )
 
+    date_step = DateFeatureAdder(date_col="dteday", drop=True)
+    # ✅ ensure DateFeatureAdder outputs pandas (keeps column names)
+    date_step.set_output(transform="pandas")
+
     pipe = Pipeline(
         steps=[
-            # FIRST - make engineered cols available for the ColumnTransformer
-            ("date_features", DateFeatureAdder(date_col="dteday", drop=True)),
+            ("date_features", date_step),
             ("preprocessor", preprocessor),
             ("model", model),
         ]
@@ -75,9 +79,7 @@ def build_pipeline():
 
 
 def main():
-    # Use the dataset path that exists in your repo.
-    # If you only have data/day.csv, change this to Path("data/day.csv")
-    data_path = Path("data/day_2011.csv")
+    data_path = Path("data/day_2011.csv")  # change to your real file if needed
     model_path = Path("model/final_model.joblib")
     model_path.parent.mkdir(parents=True, exist_ok=True)
 
