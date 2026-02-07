@@ -9,11 +9,12 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.impute import SimpleImputer
 from sklearn.ensemble import RandomForestRegressor
 
-from src.transformers import DateFeaturesAdder
+# ✅ FIX: class name is DateFeatureAdder (no "s")
+from src.transformers import DateFeatureAdder
 
 
 def build_pipeline():
-    # After DateFeaturesAdder runs, dteday is dropped and these exist:
+    # After DateFeatureAdder runs, dteday is dropped and these exist:
     numeric_features = [
         "holiday",
         "workingday",
@@ -64,7 +65,7 @@ def build_pipeline():
     pipe = Pipeline(
         steps=[
             # FIRST - make engineered cols available for the ColumnTransformer
-            ("date_features", DateFeaturesAdder(date_col="dteday")),
+            ("date_features", DateFeatureAdder(date_col="dteday", drop=True)),
             ("preprocessor", preprocessor),
             ("model", model),
         ]
@@ -74,11 +75,16 @@ def build_pipeline():
 
 
 def main():
+    # Use the dataset path that exists in your repo.
+    # If you only have data/day.csv, change this to Path("data/day.csv")
     data_path = Path("data/day_2011.csv")
     model_path = Path("model/final_model.joblib")
     model_path.parent.mkdir(parents=True, exist_ok=True)
 
     df = pd.read_csv(data_path)
+
+    if "cnt" not in df.columns:
+        raise ValueError("Target column 'cnt' not found in dataset.")
 
     y = df["cnt"]
     X = df.drop(columns=["cnt"])
