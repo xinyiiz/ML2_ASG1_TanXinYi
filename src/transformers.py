@@ -19,17 +19,13 @@ class DateFeatureAdder(BaseEstimator, TransformerMixin):
             df["dayofweek"] = d.dt.dayofweek
             df["dayofyear"] = d.dt.dayofyear
 
-            # ✅ SAFE handling for weekofyear
+            # ✅ NA-safe weekofyear
             week = d.dt.isocalendar().week
             df["weekofyear"] = week.astype("Int64").fillna(0).astype("int64")
 
             if self.drop:
                 df = df.drop(columns=[self.date_col])
-
         else:
-            # hard fallback (should not normally trigger)
             df["dayofweek"] = 0
             df["dayofyear"] = 0
-            df["weekofyear"] = 0
-
-        return df
+            d
