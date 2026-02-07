@@ -11,21 +11,42 @@ class DateFeatureAdder(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X):
+        if X is None:
+            raise ValueError("DateFeatureAdder received None input")
+
         df = X.copy()
 
+        # d is only available if date_col exists
+        d = None
         if self.date_col in df.columns:
             d = pd.to_datetime(df[self.date_col], errors="coerce")
 
-            df["dayofweek"] = d.dt.dayofweek
-            df["dayofyear"] = d.dt.dayofyear
+        # ---- dayofweek ----
+        if "dayofweek" not in df.columns:
+            if d is not None:
+                df["dayofweek"] = d.dt.dayofweek.fillna(0).astype(int)
+            elif "weekday" in df.columns:
+                df["dayofweek"] = df["weekday"]
+            else:
+                df["dayofweek"] = 0
 
-            # ✅ NA-safe weekofyear
-            week = d.dt.isocalendar().week
-            df["weekofyear"] = week.astype("Int64").fillna(0).astype("int64")
+        # ---- dayofyear ----
+        if "dayofyear" not in df.columns:
+            if d is not None:
+                df["dayofyear"] = d.dt.dayofyear.fillna(0).astype(int)
+            else:
+                df["dayofyear"] = 0
 
-            if self.drop:
-                df = df.drop(columns=[self.date_col])
-        else:
-            df["dayofweek"] = 0
-            df["dayofyear"] = 0
-            d
+        # ---- weekofyear ----
+        if "weekofyear" not in df.columns:
+            if d is not None:
+                week = d.dt.isocalendar().week
+                df["weekofyear"] = week.astype("Int64").fillna(0).astype(int)
+            else:
+                df["weekofyear"] = 0
+
+        # Drop raw date column if present
+        if self.drop and self.date_col in df.columns:
+            df = df.drop(columns=[self.date_col])
+
+        return df
